@@ -6,7 +6,7 @@
 > libcurl 和 jsoncpp
 >
 ## 使用说明
-你可以在[这里](https://github.com/nathanli97/BiliBiliCCSubtitle/releases/download/1.0.0/BilibiliCCSubtitle-1.0.0-x86_64.zip)下载到最新版本程序。或者克隆整个库进行编译。
+你可以在[这里](https://gitee.com/nathan_li97/BiliBiliCCSubtitle/attach_files/422312/download)下载到最新版本程序。或者克隆整个库进行编译。
 
 第一步：下载CC字幕。
 > ccdown [-o outputfile] url
