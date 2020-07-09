@@ -24,13 +24,13 @@
 > ccdown -d http://bilibili.com/video/BVXXXXXXXXX?p=2
 
 或者，你想下载P2~P5的所有字幕(注意，URL不要在指定分P，因为在URL指定分P会覆盖分P范围选项):
-> ccdown -s 2 -e 5 http://bilibili.com/video/BVXXXXXXXXX
+> ccdown -s 2 -e 5 -d http://bilibili.com/video/BVXXXXXXXXX
 
 又或者，你想下载P6及之前的所有分P字幕:
-> ccdown -e 6 http://bilibili.com/video/BVXXXXXXXXX
+> ccdown -e 6 -d http://bilibili.com/video/BVXXXXXXXXX
 
 又或者，你想下载P1及之后的分P字幕：
-> ccdown -s 1 http://bilibili.com/video/BVXXXXXXXXX
+> ccdown -s 1 -d http://bilibili.com/video/BVXXXXXXXXX
 
 之后，程序所在的文件夹会多出一些文件：AV号(BV号)-Pi.zh-CN.json AV号(BV号)-Pi.en-US.json（Pi代表分P，i=1,2,3,....）
 
@@ -38,7 +38,7 @@
 
 由于B站的字幕文件使用JSON格式存储的，所以你可以用下面这条指令将其转换为普通字幕文件：
 
-> ccdown -a [-o XXX字幕-中文.srt] XXX字幕.zh-CN.json
+> ccdown -c [-o XXX字幕-中文.srt] XXX字幕.zh-CN.json
 
 
 之后，你的程序文件夹就应该出现了一个XXX字幕-中文.srt字幕文件，把这个字幕文件加载到你喜爱的播放软件吧！
@@ -49,4 +49,4 @@
 
 > ccdown -c -d http://bilibili.com/video/BVXXXXXXXXX?p=2
 
-> ccdown -c -e 6 http://bilibili.com/video/BVXXXXXXXXX
+> ccdown -c -e 6 -d http://bilibili.com/video/BVXXXXXXXXX
