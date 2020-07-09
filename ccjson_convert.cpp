@@ -1,13 +1,10 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
-#include <json/json.h>
+#include "json/json.h"
 #include <fstream>
 #include <regex>
 using namespace std;
-void usage(string program){
-    cout << "Usage: " << program << " [-o outputfile] inputfile" << endl;
-}
 string time_convert(string raw)
 {
     int h=0,m=0,s=0,ms=0;
@@ -45,29 +42,9 @@ string time_convert(string raw)
         sprintf(tmp,"%02d:%02d:%02d,%d",h,m,s,ms);
     return string(tmp);
 }
-int main(int argc,char **argv) {
-    cout << "Bilibili JSON CC subtitle to srt format translator by 晴酱(alias Nathanli)" << endl;
-    if(argc < 2 || argc > 4)
-    {
-        cerr << "Invaild argument" << endl;
-        usage(argv[0]);
-        return -1;
-    }
-    string inputfile=argv[1];
-    string outputfile=argv[1];
-    if(inputfile=="-o")
-    {
-        if(argc !=4)
-        {
-            cerr << "Invaild argument" << endl;
-            usage(argv[0]);
-            return -1;
-        }
-        inputfile=argv[3];
-        outputfile=argv[2];
-    } else
-        outputfile=regex_replace(outputfile,regex(".json$"),".srt");
-    cout << "Input file:" << inputfile << endl << "Output file:" << outputfile << endl;
+int do_convert(string inputfile,string outputfile) {
+    outputfile=regex_replace(outputfile,regex(".json$"),".srt");
+    cout << inputfile << " ==> " << outputfile << endl;
     Json::Reader reader;
     Json::Value root;
     ifstream input;

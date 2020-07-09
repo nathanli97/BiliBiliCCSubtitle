@@ -1,135 +1,124 @@
 //
 // Created by taboo on 2020/6/25.
 //
-#include <iostream>
-#include <regex>
-#include <memory>
-#include <fstream>
-#include <curl/curl.h>
+#include "ccjson_downloader.h"
+#include "json/json.h"
+#include "common.h"
+#include "ccjson_convert.h"
 using namespace std;
-struct Memory{
-    shared_ptr<string> memory;
-};
-static size_t write_Callback(void *contents,size_t size,size_t nmemb,void *userp)
+
+int do_download_json(string const & inputfile,int p_start,int p_end,bool auto_convert)
 {
-    size_t realsize = size * nmemb;
-    struct Memory *mem = (struct Memory *)userp;
-    mem->memory->insert(mem->memory->size(),(char*)contents,realsize);
-    return realsize;
-}
-void usage(string program){
-    cout << "Usage: " << program << " [-o outputfile] input_url" << endl;
-    cout << "input_url: Bilibili Player page" << endl;
-}
-shared_ptr<string> simple_get(string url)
-{
-    CURL *curl;
-    CURLcode res;
-    curl = curl_easy_init();
-    if(!curl)
-    {
-        cerr << "CURL initial failed!" << endl;
-        exit(-1);
-    }
-    struct Memory mem;
-    mem.memory=make_shared<string>();
-    curl_easy_setopt(curl,CURLOPT_URL,url.c_str());
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(curl,CURLOPT_WRITEFUNCTION,write_Callback);
-    curl_easy_setopt(curl,CURLOPT_WRITEDATA,(void*)&mem);
-    curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
-    struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0" );
-    headers = curl_slist_append(headers, "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-    headers = curl_slist_append(headers, "Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2");
-    headers = curl_slist_append(headers, "Upgrade-Insecure-Requests: 1" );
-    headers = curl_slist_append(headers, "Cache-Control: max-age=0");
-    headers = curl_slist_append(headers, "TE: Trailers");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    res = curl_easy_perform(curl);
-    if(res != CURLE_OK)
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
-                curl_easy_strerror(res));
-    curl_easy_cleanup(curl);
-    return mem.memory;
-}
-bool download_file(string url,string filename)
-{
-    ofstream file(filename,ios::out|ios::trunc);
-    if(!file.is_open())
-    {
-        cerr << "Failed to open file:" << filename << endl;
-        return false;
-    }
-    auto raw=simple_get(url);
-    file << *raw;
-    file.close();
-    return true;
-}
-int main(int argc,char **argv)
-{
-    cout << "Bilibili JSON format CC subtitle downloader by 晴酱(alias Nathanli)" << endl;
-    if(argc < 2 || argc > 4)
-    {
-        cerr << "Invaild argument" << endl;
-        usage(argv[0]);
-        return -1;
-    }
-    string inputfile=argv[1];
-    string outputfile="default.json";
-    if(inputfile=="-o")
-    {
-        if(argc !=4)
-        {
-            cerr << "Invaild argument" << endl;
-            usage(argv[0]);
-            return -1;
-        }
-        inputfile=argv[3];
-        outputfile=argv[2];
-    } else
-        cerr << "Warning : You are not specified the output file name.Using the default name" << endl;
-    auto html=simple_get(inputfile);
-    regex e_subtitle(R"(subtitle\\[A-Za-z0-9]+\.json)",regex_constants::extended);
-    regex e_lang(R"("lan":"[A-Za-z-]+")",regex_constants::extended);
-    smatch match_subtitle,match_lang;
-    string str_subtitle=*html,str_lang=*html;
-    
-    str_subtitle=regex_replace(str_subtitle,regex("\\\\u002F",regex_constants::extended),"\\");
-    
     vector<string> urls;
     vector<string> langs;
-    
-    while (std::regex_search (str_subtitle,match_subtitle,e_subtitle)) {
-        for (auto x=match_subtitle.begin();x!=match_subtitle.end();x++) {
-            string url=x->str();
-            url=regex_replace(url,regex("subtitle\\\\"),"");
-            urls.push_back(url);
-        }
-        str_subtitle = match_subtitle.suffix().str();
-    }
-    while (std::regex_search (str_lang,match_lang,e_lang)) {
-        for (auto x=match_lang.begin();x!=match_lang.end();x++) {
-            string lang=x->str();
-            lang=regex_replace(lang,regex(R"(lan|"|:)"),"");
-            langs.push_back(lang);
-        }
-        str_lang = match_lang.suffix().str();
-    }
-    int size=min(langs.size(),urls.size());
-    for(int i=0;i<size;i++)
+    smatch match;
+    auto html=do_simple_get(inputfile);
+    auto part=*html;
+    auto part_pid=inputfile;
+
+    string part_bvid;
+    string part_aid;
+    bool has_pid=false;
+    //Matching pid
+    if(std::regex_search (part_pid,match,regex(R"(p=\d+)")))
     {
-        string save_file=outputfile;
-        if(save_file.substr(save_file.size()-4,4)!="json")
-            save_file+="."+langs[i]+".json";
-        else
-            save_file=regex_replace(save_file,regex(R"(json$)"),langs[i]+".json");
-        download_file("http://i0.hdslb.com/bfs/subtitle/"+urls[i],save_file);
-        cout << "Saved " << langs[i] << " as " << save_file << endl;
+        part_pid=match.begin()->str();
+        if(std::regex_search (part_pid,match,regex(R"(\d+)")))
+        {
+            part_pid=match.begin()->str();
+            has_pid=true;
+        }
+    }
+    if(part_pid==inputfile)
+        part_pid="1";
+    //Matching aid and bvid
+    if(std::regex_search (part,match,regex(R"(__INITIAL_STATE__=\{"aid":\d+,"bvid":"[A-Za-z0-9]+")")))
+    {
+        part=match.begin()->str();
+        if(std::regex_search (part,match,regex(R"(__INITIAL_STATE__=\{"aid":\d+,)")))
+        {
+            part_aid=match.begin()->str();
+            if(std::regex_search (part_aid,match,regex(R"(\d+)")))
+            {
+                part_aid=match.begin()->str();
+            }
+        }
+
+        if(std::regex_search (part,match,regex(R"("bvid":"[A-Za-z0-9]+)")))
+        {
+            part_bvid=match.begin()->str();
+            part_bvid=regex_replace(part_bvid,regex(R"("bvid":")",regex_constants::extended),"");
+        }
     }
 
-    curl_global_cleanup();
+    //Getting playlist
+    auto part_playlist=do_simple_get("https://api.bilibili.com/x/player/pagelist?bvid="+part_bvid+"&jsonp=jsonp");
+    Json::Value playlist,subtitlelist;
+    Json::Reader reader;
+    if(!reader.parse(*part_playlist,playlist))
+    {
+        cerr << "Failed to parse json document when parsing playlist!" << endl;
+        return -1;
+    }
+    if(stoi(part_pid)-1 >= playlist["data"].size() || stoi(part_pid) < 0)
+    {
+        cerr << "ERR:PID " << part_pid << " not found." << endl;
+        return -1;
+    }
+
+
+    int ipid=stoi(part_pid);
+    if(p_start!=0 && p_end==0)
+        p_end=playlist["data"].size();
+    if(p_start<0 || p_start-1 >=playlist["data"].size())
+        p_start=1;
+    if(p_end<0 || p_end-1 >=playlist["data"].size())
+        p_end=1;
+
+    if(has_pid)
+    {
+        p_start=ipid;
+        p_end=ipid;
+    }
+    for(int pid=p_start;pid<=p_end;pid++)
+    {
+        auto part_cid=playlist["data"][pid-1]["cid"];
+        if(!part_cid.isInt())
+        {
+            cerr << "Cannot get CID" << endl;
+            return -1;
+        }
+        auto subtitle_info=*do_simple_get("https://api.bilibili.com/x/player.so?id=cid:"+to_string(part_cid.asInt())+"&aid="+part_aid+"&bvid="+part_bvid);
+
+        if(std::regex_search (subtitle_info,match,regex(R"(<subtitle>.*</subtitle>)")))
+        {
+            subtitle_info=match.begin()->str();
+#ifdef __WIN32
+            subtitle_info=Utf8ToGbk(subtitle_info.c_str());
+#endif
+            subtitle_info=regex_replace(subtitle_info,regex(R"(^<subtitle>)",regex_constants::extended),"");
+            subtitle_info=regex_replace(subtitle_info,regex(R"(</subtitle>$)",regex_constants::extended),"");
+        }
+        if(!reader.parse(subtitle_info,subtitlelist))
+        {
+            cerr << "Failed to parse json document when parsing information of subtitle!" << endl;
+            return -1;
+        }
+        auto subtitles_root=subtitlelist["subtitles"];
+        if(subtitles_root.size()==0)
+        {
+            cerr << "No CC-subtitles was found in P" << pid << endl;
+            return -1;
+        }
+        string outputfile;
+        for(auto i:subtitles_root)
+        {
+            outputfile = "AV" + part_aid + "(" + part_bvid + ")-P" + to_string(pid)+ "-" + i["lan"].asString() + ".json";
+            download_file(string("http:")+i["subtitle_url"].asString(),outputfile);
+            cout << "Found: " << i["lan"].asString() << " " << i["lan_doc"].asString() << " " << " ==> " << outputfile << endl;
+            if(auto_convert)
+                do_convert(outputfile,outputfile);
+        }
+    }
     return 0;
 }
