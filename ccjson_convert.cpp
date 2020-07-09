@@ -1,13 +1,10 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
-#include <json/json.h>
+#include "json/json.h"
 #include <fstream>
 #include <regex>
 using namespace std;
-void usage(string program){
-    cout << "Usage: " << program << " [-o outputfile] inputfile" << endl;
-}
 string time_convert(string raw)
 {
     int h=0,m=0,s=0,ms=0;
@@ -45,29 +42,9 @@ string time_convert(string raw)
         sprintf(tmp,"%02d:%02d:%02d,%d",h,m,s,ms);
     return string(tmp);
 }
-int main(int argc,char **argv) {
-    cout << "Bilibili JSON CC subtitle to srt format translator by 晴酱(alias Nathanli)" << endl;
-    if(argc < 2 || argc > 4)
-    {
-        cerr << "Invaild argument" << endl;
-        usage(argv[0]);
-        return -1;
-    }
-    string inputfile=argv[1];
-    string outputfile=argv[1];
-    if(inputfile=="-o")
-    {
-        if(argc !=4)
-        {
-            cerr << "Invaild argument" << endl;
-            usage(argv[0]);
-            return -1;
-        }
-        inputfile=argv[3];
-        outputfile=argv[2];
-    } else
-        outputfile=regex_replace(outputfile,regex(".json$"),".srt");
-    cout << "Input file:" << inputfile << endl << "Output file:" << outputfile << endl;
+int do_convert(string inputfile,string outputfile) {
+    outputfile=regex_replace(outputfile,regex(".json$"),".srt");
+    cout << inputfile << " ==> " << outputfile << endl;
     Json::Reader reader;
     Json::Value root;
     ifstream input;
@@ -97,6 +74,7 @@ int main(int argc,char **argv) {
         return -1;
     }
     long long i=0;
+
     auto write_srt=[&output,&i](string from,string to,string content) mutable->void{
         regex r1("\\n");
         regex r2("\\n\\r");
@@ -108,26 +86,51 @@ int main(int argc,char **argv) {
         output << content << endl << endl;
         i++;
     };
+    if(!root.isMember("body"))
+    {
+        cerr << "Wrong CC format" << endl;
+        return -1;
+    }
     Json::Value body=root["body"];
     for(auto i:body)
     {
-        if(i["from"].isNull() || !(i["from"].isDouble() || i["from"].isInt()))
+        if(!i.isMember("from") || !(i["from"].isDouble() || i["from"].isInt()))
         {
             cerr << "Wrong CC format" << endl;
             return -1;
         }
-        if(i["to"].isNull() || !(i["to"].isDouble() || i["to"].isInt()))
+        if(!i.isMember("to") || !(i["to"].isDouble() || i["to"].isInt()))
         {
             cerr << "Wrong CC format" << endl;
             return -1;
         }
-        if(i["content"].isNull() || !i["content"].isString())
+        if(!i.isMember("content") || !i["content"].isString())
         {
             cerr << "Wrong CC format" << endl;
             return -1;
         }
-        write_srt(to_string(i["from"].asDouble()),to_string(i["to"].asDouble()),i["content"].asString());
+        string from,to;
+        if(i["from"].isDouble())
+            from=to_string(i["from"].asDouble());
+        else
+            from=to_string(i["from"].asInt());
+
+        if(i["to"].isDouble())
+            to=to_string(i["to"].asDouble());
+        else
+            to=to_string(i["to"].asInt());
+
+        write_srt(from,to,i["content"].asString());
     }
     input.close();
     output.close();
+    root.clear();
+    return 0;
+}
+int debug()
+{
+    string s1="AV97740720(BV1JE411N7UD)-P1-zh-CN.json";
+    string s2="AV97740720(BV1JE411N7UD)-P1-zh-CN.json";
+    do_convert(s1,s2);
+    return 0;
 }
