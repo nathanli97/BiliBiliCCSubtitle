@@ -27,7 +27,6 @@ int main(int argc,char **argv)
     string buf;
     string input_file;
     string output_file;
-    string target_language;
 
     for(i=1;i<argc;i++)
     {
@@ -101,5 +100,6 @@ int main(int argc,char **argv)
             cerr << "WARN:-o option can not use in download mode! ignoring" << endl;
         do_download_json(input_file,p_start,p_end,true);
     }
+    do_curl_cleanup();
     return 0;
 }
