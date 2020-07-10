@@ -25,21 +25,18 @@ string time_convert(string raw)
         s2="0";
     ms=std::stoi(s2);
     s=std::stoi(s1);
-    while(s>=60)
-    {
-        m++;
-        s-=60;
-    }
-    while(m>=60)
-    {
-        h++;
-        m-=60;
-    }
+    h=s/3600;
+    m=(s-3600*h)/60;
+    s=s%60;
     char tmp[50];
     if(ms<100)
         sprintf(tmp,"%02d:%02d:%02d,%d0",h,m,s,ms);
-    else
+    else if(ms<=999)
         sprintf(tmp,"%02d:%02d:%02d,%d",h,m,s,ms);
+    else{
+        string s_tmp=to_string(ms).substr(0,3);
+        sprintf(tmp,"%02d:%02d:%02d,%s",h,m,s,s_tmp.c_str());
+    }
     return string(tmp);
 }
 int do_convert(string inputfile,string outputfile) {
