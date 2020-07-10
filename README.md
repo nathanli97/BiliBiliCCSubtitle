@@ -1,6 +1,5 @@
 # BiliBiliCCSubtitle:一个用于下载B站CC字幕及转换的工具
 
-当前版本1.1.0
 
 ### 运行环境要求：
 > Windows 10，X86——64
@@ -8,8 +7,8 @@
 > libcurl 和 jsoncpp
 >
 ## 使用说明
-你可以在[这里](https://github.com/nathanli97/BiliBiliCCSubtitle/releases/download/1.1.0/BilibiliCCSubtitle-64bit-1.1.0.zip)下载到最新版本程序。或者克隆整个库进行编译。
-如果你在中国境内网速较为缓慢，可以尝试从[这里](https://gitee.com/nathan_li97/BiliBiliCCSubtitle/attach_files/431297/download)前往Gitee下载。
+你可以在[这里](https://github.com/nathanli97/BiliBiliCCSubtitle/releases/latest/download/BiliBiliCCSubtitle-x86_64.zip)下载到最新版本程序。或者克隆整个库进行编译。
+如果你在中国境内网速较为缓慢，可以尝试从[这里](https://gitee.com/nathan_li97/BiliBiliCCSubtitle/attach_files/431357/download)前往Gitee下载。
 ### 第一步：下载CC字幕。
 > ccdown -d url
 
