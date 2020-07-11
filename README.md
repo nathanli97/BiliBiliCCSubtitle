@@ -5,6 +5,10 @@
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-no-red.svg)](https://bitbucket.org/lbesson/ansi-colors)
 
+[![Platform](https://img.shields.io/badge/platform-Win32|Win32_64-lightgrey.svg)](#)
+
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](#)
+
 ### 运行环境要求：
 > Windows 10，X86——64
 ### 编译依赖：
