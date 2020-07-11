@@ -1,6 +1,19 @@
-//
-// Created by taboo on 2020/6/25.
-//
+/*
+ * Copyright 2020 NathanLi
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #include "ccjson_downloader.h"
 #include "json/json.h"
 #include "common.h"
@@ -9,16 +22,19 @@ using namespace std;
 
 int do_download_json(string const & inputfile,int p_start,int p_end,bool auto_convert)
 {
-    vector<string> urls;
-    vector<string> langs;
     smatch match;
-    auto html=do_simple_get(inputfile);
+    auto html=CURLHelper::do_simple_get(inputfile);
     auto part=*html;
     auto part_pid=inputfile;
-
     string part_bvid;
     string part_aid;
+    string outputfile;
     bool has_pid=false;
+    Json::Value playlist,subtitlelist;
+    Json::Reader reader;
+
+    int ipid;
+
     //Matching pid
     if(std::regex_search (part_pid,match,regex(R"(p=\d+)")))
     {
@@ -52,9 +68,8 @@ int do_download_json(string const & inputfile,int p_start,int p_end,bool auto_co
     }
 
     //Getting playlist
-    auto part_playlist=do_simple_get("https://api.bilibili.com/x/player/pagelist?bvid="+part_bvid+"&jsonp=jsonp");
-    Json::Value playlist,subtitlelist;
-    Json::Reader reader;
+    auto part_playlist=CURLHelper::do_simple_get("https://api.bilibili.com/x/player/pagelist?bvid="+part_bvid+"&jsonp=jsonp");
+
     if(!reader.parse(*part_playlist,playlist))
     {
         cerr << "Failed to parse json document when parsing playlist!" << endl;
@@ -67,7 +82,7 @@ int do_download_json(string const & inputfile,int p_start,int p_end,bool auto_co
     }
 
 
-    int ipid=stoi(part_pid);
+    ipid=stoi(part_pid);
     if(p_start!=0 && p_end==0)
         p_end=playlist["data"].size();
     if(p_start<0 || p_start-1 >=playlist["data"].size())
@@ -88,7 +103,7 @@ int do_download_json(string const & inputfile,int p_start,int p_end,bool auto_co
             cerr << "Cannot get CID" << endl;
             return -1;
         }
-        auto subtitle_info=*do_simple_get("https://api.bilibili.com/x/player.so?id=cid:"+to_string(part_cid.asInt())+"&aid="+part_aid+"&bvid="+part_bvid);
+        auto subtitle_info=*CURLHelper::do_simple_get("https://api.bilibili.com/x/player.so?id=cid:"+to_string(part_cid.asInt())+"&aid="+part_aid+"&bvid="+part_bvid);
 
         if(std::regex_search (subtitle_info,match,regex(R"(<subtitle>.*</subtitle>)")))
         {
@@ -110,11 +125,11 @@ int do_download_json(string const & inputfile,int p_start,int p_end,bool auto_co
             cerr << "No CC-subtitles was found in P" << pid << endl;
             return -1;
         }
-        string outputfile;
+
         for(auto i:subtitles_root)
         {
             outputfile = "AV" + part_aid + "(" + part_bvid + ")-P" + to_string(pid)+ "-" + i["lan"].asString() + ".json";
-            download_file(string("http:")+i["subtitle_url"].asString(),outputfile);
+            CURLHelper::download_file(string("http:")+i["subtitle_url"].asString(),outputfile);
             cout << "Found: " << i["lan"].asString() << " " << i["lan_doc"].asString() << " " << " ==> " << outputfile << endl;
             if(auto_convert)
                 do_convert(outputfile,outputfile);
