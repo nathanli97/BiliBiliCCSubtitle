@@ -1,5 +1,5 @@
 # BiliBiliCCSubtitle:一个用于下载B站CC字幕及转换的工具
-
+[![badge](https://img.shields.io/badge/license-Apache-blue)](https://github.com/nathanli97/BilibiliCCSubtitle/blob/master/LICENSE)
 
 ### 运行环境要求：
 > Windows 10，X86——64
