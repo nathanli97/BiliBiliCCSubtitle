@@ -122,8 +122,8 @@ int do_download_json(string const & inputfile,int p_start,int p_end,bool auto_co
         auto subtitles_root=subtitlelist["subtitles"];
         if(subtitles_root.size()==0)
         {
-            cerr << "No CC-subtitles was found in P" << pid << endl;
-            return -1;
+            cerr << "No CC-subtitles was found in P" << pid << ", ignoring" << endl;
+            continue;
         }
 
         for(auto i:subtitles_root)

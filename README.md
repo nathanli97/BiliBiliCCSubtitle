@@ -6,14 +6,16 @@
 [![Platform](https://img.shields.io/badge/platform-Win32|Win32_64-lightgrey.svg)](#)
 [![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](#)
 
+### Changelog
+2021-6-5 修复了多P视频中间有分p没有字幕会导致下载中断的问题
+
 ### 运行环境要求：
 > Windows 10，X86——64
 ### 编译依赖：
 > libcurl 和 jsoncpp
->
 ## 使用说明
 你可以在[这里](https://github.com/nathanli97/BiliBiliCCSubtitle/releases/latest/download/BiliBiliCCSubtitle-x86_64.zip)下载到最新版本程序。或者克隆整个库进行编译。
-如果你在中国境内网速较为缓慢，可以尝试从[这里](https://gitee.com/nathan_li97/BiliBiliCCSubtitle/attach_files/431357/download)前往Gitee下载。
+
 ### 第一步：下载CC字幕。
 > ccdown -d url
 
