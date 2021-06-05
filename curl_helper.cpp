@@ -15,15 +15,15 @@
  */
 #include "curl_helper.h"
 using namespace std;
+std::size_t write_Callback(void *contents,size_t size,size_t nmemb,void *userp)
+{
+    size_t realsize = size * nmemb;
+    auto *mem = (struct Memory *)userp;
+    mem->memory->insert(mem->memory->size(),(char*)contents,realsize);
+    return realsize;
+}
 shared_ptr<string> CURLHelper::do_simple_get(string const &url)
 {
-    auto write_Callback=[](void *contents,size_t size,size_t nmemb,void *userp)->std::size_t
-    {
-        size_t realsize = size * nmemb;
-        auto *mem = (struct Memory *)userp;
-        mem->memory->insert(mem->memory->size(),(char*)contents,realsize);
-        return realsize;
-    };
     CURL *curl;
     CURLcode res;
     curl = curl_easy_init();

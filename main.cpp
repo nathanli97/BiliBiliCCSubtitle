@@ -32,7 +32,7 @@ void print_usage(string program){
 }
 int main(int argc,char **argv)
 {
-    cout << "Bilibili JSON format CC subtitle downloader Ver 1.1.2 by Nathanli97" << endl;
+    cout << "Bilibili JSON format CC subtitle downloader Ver 1.1.3 by Nathanli97" << endl;
     cout << "BUILD at " << __DATE__ << " " << __TIME__ << endl;
     enum jmode_t mode=undefined;
     int i,p_start=0,p_end=0;
