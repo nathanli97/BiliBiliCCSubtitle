@@ -16,7 +16,8 @@
 
 #ifndef BILIBILICCSUBTITLE_COMMON_H
 #define BILIBILICCSUBTITLE_COMMON_H
-
+#include <windows.h>
+#include <direct.h>
 extern bool verbose;
 
 #ifdef _WIN32
@@ -25,4 +26,6 @@ extern bool verbose;
 std::string Utf8ToGbk(const char *src_str);
 #endif
 
+void prepare_env();
+int file_exist(std::string path);
 #endif //BILIBILICCSUBTITLE_COMMON_H

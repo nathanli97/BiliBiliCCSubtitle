@@ -35,7 +35,7 @@ string time_convert(string raw)
         else
             s2+=c;
     }
-    while (s2[s2.length()-1]=='0')
+    while (!s2.empty() && s2[s2.length()-1]=='0')
         s2=s2.substr(0,s2.length()-1);
     if(s2=="")
         s2="0";

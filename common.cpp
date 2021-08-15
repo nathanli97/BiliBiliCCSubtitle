@@ -13,12 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
+#include "common.h"
 #include <iostream>
 using namespace std;
 
 #ifdef _WIN32
-#include <windows.h>
+
+
 string Utf8ToGbk(const char *src_str)
 {
     int len = MultiByteToWideChar(CP_UTF8, 0, src_str, -1, NULL, 0);
@@ -33,5 +34,22 @@ string Utf8ToGbk(const char *src_str)
     if (wszGBK) delete[] wszGBK;
     if (szGBK) delete[] szGBK;
     return strTemp;
+}
+
+int file_exist(std::string path)
+{
+    struct stat info;
+
+    if( stat( path.c_str(), &info ) != 0 )
+        return -1; // NOT EXISTED
+    else if( info.st_mode & S_IFDIR )
+        return 0;  // EXISTED, IS　DIRECTORY
+    else
+        return 1;  // EXISTED, IS　NOT DIRECTORY
+}
+void prepare_env()
+{
+    if(file_exist("downloads") != 0)
+        _mkdir("downloads");
 }
 #endif

@@ -20,7 +20,7 @@
 #include "ccjson_convert.h"
 using namespace std;
 
-int do_download_json(string const & inputfile,int p_start,int p_end,bool auto_convert)
+int do_download_json(string const & inputfile, string outputdir, int p_start,int p_end,bool auto_convert)
 {
     smatch match;
     auto html=CURLHelper::do_simple_get(inputfile);
@@ -128,7 +128,14 @@ int do_download_json(string const & inputfile,int p_start,int p_end,bool auto_co
 
         for(auto i:subtitles_root)
         {
+            if(outputdir.empty())
+            {
+                outputdir = "downloads/" + part_bvid + "/";
+                if(file_exist(outputdir) != 0)
+                    _mkdir(outputdir.c_str());
+            }
             outputfile = "AV" + part_aid + "(" + part_bvid + ")-P" + to_string(pid)+ "-" + i["lan"].asString() + ".json";
+            outputfile = outputdir + outputfile;
             CURLHelper::download_file(string("http:")+i["subtitle_url"].asString(),outputfile);
             cout << "Found: " << i["lan"].asString() << " " << i["lan_doc"].asString() << " " << " ==> " << outputfile << endl;
             if(auto_convert)
