@@ -47,6 +47,10 @@ int do_download_json(string const & inputfile, string outputdir, int p_start,int
     }
     if(part_pid==inputfile)
         part_pid="1";
+
+    std::string part_playlist_url;
+    bool is_ntl = false;
+    std::string ntl_name;
     //Matching aid and bvid
     if(std::regex_search (part,match,regex(R"(__INITIAL_STATE__=\{"aid":\d+,"bvid":"[A-Za-z0-9]+")")))
     {
@@ -65,10 +69,31 @@ int do_download_json(string const & inputfile, string outputdir, int p_start,int
             part_bvid=match.begin()->str();
             part_bvid=regex_replace(part_bvid,regex(R"("bvid":")",regex_constants::extended),"");
         }
-    }
 
+        part_playlist_url = "https://api.bilibili.com/x/player/pagelist?bvid="+part_bvid+"&jsonp=jsonp";
+    }else
+    {
+        //Maybe this is the global-version BiliBili
+        //play/1010919/10446796
+        if(std::regex_search (part,match,regex(R"(play/\d+/\d+)")))
+        {
+            part=match.begin()->str();
+            if(std::regex_search (part,match,regex(R"(\d+$)")))
+            {
+                part=match.begin()->str();
+                part_playlist_url = "https://app.global.bilibili.com/intl/gateway/v2/app/subtitle?ep_id=" + part;
+                ntl_name = "GLOBAL" + part;
+                is_ntl = true;
+            }
+        }
+
+    }
+    if(part_playlist_url.empty())
+    {
+        return -1;
+    }
     //Getting playlist
-    auto part_playlist=CURLHelper::do_simple_get("https://api.bilibili.com/x/player/pagelist?bvid="+part_bvid+"&jsonp=jsonp");
+    auto part_playlist=CURLHelper::do_simple_get(part_playlist_url);
 
     if(!reader.parse(*part_playlist,playlist))
     {
@@ -81,30 +106,43 @@ int do_download_json(string const & inputfile, string outputdir, int p_start,int
         return -1;
     }
 
-
-    ipid=stoi(part_pid);
-    if(p_start!=0 && p_end==0)
-        p_end=playlist["data"].size();
-    if(p_start<0 || p_start-1 >=playlist["data"].size())
-        p_start=1;
-    if(p_end<0 || p_end-1 >=playlist["data"].size())
-        p_end=1;
-
-    if(has_pid)
+    if(!is_ntl)
     {
-        p_start=ipid;
-        p_end=ipid;
+        ipid=stoi(part_pid);
+        if(p_start!=0 && p_end==0)
+            p_end=playlist["data"].size();
+        if(p_start<0 || p_start-1 >=playlist["data"].size())
+            p_start=1;
+        if(p_end<0 || p_end-1 >=playlist["data"].size())
+            p_end=1;
+
+        if(has_pid)
+        {
+            p_start=ipid;
+            p_end=ipid;
+        }
+    }else
+    {
+        p_start = p_end = -1;
     }
     for(int pid=p_start;pid<=p_end;pid++)
     {
-        auto part_cid=playlist["data"][pid-1]["cid"];
-        if(!part_cid.isInt())
+        Json::Value part_cid;
+        std::string subtitle_info;
+        if(!is_ntl)
         {
-            cerr << "Cannot get CID" << endl;
-            return -1;
+            part_cid=playlist["data"][pid-1]["cid"];
+            if(!part_cid.isInt())
+            {
+                cerr << "Cannot get CID" << endl;
+                return -1;
+            }
+            subtitle_info=*CURLHelper::do_simple_get("https://api.bilibili.com/x/player.so?id=cid:"+to_string(part_cid.asInt())+"&aid="+part_aid+"&bvid="+part_bvid);
         }
-        auto subtitle_info=*CURLHelper::do_simple_get("https://api.bilibili.com/x/player.so?id=cid:"+to_string(part_cid.asInt())+"&aid="+part_aid+"&bvid="+part_bvid);
-
+        else
+        {
+            subtitle_info=*part_playlist;
+        }
         if(std::regex_search (subtitle_info,match,regex(R"(<subtitle>.*</subtitle>)")))
         {
             subtitle_info=match.begin()->str();
@@ -119,6 +157,10 @@ int do_download_json(string const & inputfile, string outputdir, int p_start,int
             cerr << "Failed to parse json document when parsing information of subtitle!" << endl;
             return -1;
         }
+        if (is_ntl)
+        {
+            subtitlelist = subtitlelist["data"];
+        }
         auto subtitles_root=subtitlelist["subtitles"];
         if(subtitles_root.size()==0)
         {
@@ -130,16 +172,38 @@ int do_download_json(string const & inputfile, string outputdir, int p_start,int
         {
             if(outputdir.empty())
             {
+                if(part_bvid.empty() && is_ntl)
+                {
+                    part_bvid = ntl_name;
+                }
                 outputdir = "downloads/" + part_bvid + "/";
                 if(file_exist(outputdir) != 0)
                     _mkdir(outputdir.c_str());
             }
-            outputfile = "AV" + part_aid + "(" + part_bvid + ")-P" + to_string(pid)+ "-" + i["lan"].asString() + ".json";
-            outputfile = outputdir + outputfile;
-            CURLHelper::download_file(string("http:")+i["subtitle_url"].asString(),outputfile);
-            cout << "Found: " << i["lan"].asString() << " " << i["lan_doc"].asString() << " " << " ==> " << outputfile << endl;
-            if(auto_convert)
-                do_convert(outputfile,outputfile);
+            if(is_ntl)
+            {
+                auto url = i["url"].asString();
+                auto lang = i["key"].asString();
+                auto lang_local = i["title"].asString();
+                outputfile = ntl_name + "-" + lang +".json";
+                outputfile = outputdir + outputfile ;
+#ifdef __WIN32
+                lang_local=Utf8ToGbk(lang_local);
+#endif
+                CURLHelper::download_file(i["url"].asString(),outputfile);
+                cout << "Found: " << lang << " " << lang_local << " " << " ==> " << outputfile << endl;
+                if(auto_convert)
+                    do_convert(outputfile,outputfile);
+            }
+            else
+            {
+                outputfile = "AV" + part_aid + "(" + part_bvid + ")-P" + to_string(pid)+ "-" + i["lan"].asString() + ".json";
+                outputfile = outputdir + outputfile;
+                CURLHelper::download_file(string("http:")+i["subtitle_url"].asString(),outputfile);
+                cout << "Found: " << i["lan"].asString() << " " << i["lan_doc"].asString() << " " << " ==> " << outputfile << endl;
+                if(auto_convert)
+                    do_convert(outputfile,outputfile);
+            }
         }
     }
     return 0;
