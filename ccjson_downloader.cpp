@@ -184,7 +184,7 @@ int do_download_json(string const & inputfile, string outputdir, int p_start,int
             {
                 auto url = i["url"].asString();
                 auto lang = i["key"].asString();
-                auto lang_local = i["title"].asString();
+                auto lang_local = "";
                 outputfile = ntl_name + "-" + lang +".json";
                 outputfile = outputdir + outputfile ;
 #ifdef __WIN32
@@ -200,7 +200,7 @@ int do_download_json(string const & inputfile, string outputdir, int p_start,int
                 outputfile = "AV" + part_aid + "(" + part_bvid + ")-P" + to_string(pid)+ "-" + i["lan"].asString() + ".json";
                 outputfile = outputdir + outputfile;
                 CURLHelper::download_file(string("http:")+i["subtitle_url"].asString(),outputfile);
-                cout << "Found: " << i["lan"].asString() << " " << i["lan_doc"].asString() << " " << " ==> " << outputfile << endl;
+                cout << "Found: " << i["lan"].asString()  << " " << " ==> " << outputfile << endl;
                 if(auto_convert)
                     do_convert(outputfile,outputfile);
             }
