@@ -21,6 +21,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(CURL CONFIG REQUIRED)
+find_package(boost CONFIG REQUIRED)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     add_compile_options(-fexec-charset=gbk -w)
